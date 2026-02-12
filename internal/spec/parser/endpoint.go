@@ -5,7 +5,7 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/agure-la/api-docs/internal/spec"
-
+     "strconv"
 )
 
 func parseEndpoints(doc *openapi3.T) []spec.Endpoint {
