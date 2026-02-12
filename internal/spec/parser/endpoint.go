@@ -11,7 +11,7 @@ import (
 func parseEndpoints(doc *openapi3.T) []spec.Endpoint {
 	var endpoints []spec.Endpoint
 
-	for path, pathItem := range doc.Paths {
+	for path, pathItem := range *doc.Paths { // <- dereference here
 		for method, op := range pathItem.Operations() {
 			endpoints = append(endpoints, spec.Endpoint{
 				ID:          op.OperationID,
@@ -30,6 +30,7 @@ func parseEndpoints(doc *openapi3.T) []spec.Endpoint {
 
 	return endpoints
 }
+
 
 func parseParameters(op *openapi3.Operation) []spec.Parameter {
 	var params []spec.Parameter
@@ -64,15 +65,24 @@ func parseRequestBody(op *openapi3.Operation) *spec.RequestBody {
 func parseResponses(op *openapi3.Operation) []spec.Response {
 	var responses []spec.Response
 
-	for code, respRef := range op.Responses {
-		if respRef.Value == nil {
+	if op.Responses == nil {
+		return responses
+	}
+
+	for code, respRef := range op.Responses.Map() {
+		if respRef == nil || respRef.Value == nil {
 			continue
+		}
+
+		description := ""
+		if respRef.Value.Description != nil {
+			description = *respRef.Value.Description
 		}
 
 		responses = append(responses, spec.Response{
 			StatusCode:  parseStatusCode(code),
-			Description: respRef.Value.Description,
-			SchemaRef:   "", // Optional: map content schema to SchemaRef
+			Description: description,
+			SchemaRef:   "",
 		})
 	}
 
