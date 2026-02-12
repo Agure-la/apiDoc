@@ -11,8 +11,20 @@ import (
 func parseEndpoints(doc *openapi3.T) []spec.Endpoint {
 	var endpoints []spec.Endpoint
 
-	for path, pathItem := range *doc.Paths { // <- dereference here
+	if doc.Paths == nil {
+		return endpoints
+	}
+
+	for path, pathItem := range doc.Paths.Map() {
+		if pathItem == nil {
+			continue
+		}
+
 		for method, op := range pathItem.Operations() {
+			if op == nil {
+				continue
+			}
+
 			endpoints = append(endpoints, spec.Endpoint{
 				ID:          op.OperationID,
 				Method:      spec.HTTPMethod(strings.ToUpper(method)),
@@ -30,7 +42,6 @@ func parseEndpoints(doc *openapi3.T) []spec.Endpoint {
 
 	return endpoints
 }
-
 
 func parseParameters(op *openapi3.Operation) []spec.Parameter {
 	var params []spec.Parameter
