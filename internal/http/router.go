@@ -66,6 +66,31 @@ func (r *Router) handleAPIs(w http.ResponseWriter, req *http.Request) {
 		}
 		
 		utils.WriteError(w, http.StatusNotFound, "Not found")
+		
+	case http.MethodPost:
+		// /apis - create new API
+		if req.URL.Path == "/apis" {
+			r.apiHandler.CreateAPI(w, req)
+			return
+		}
+		utils.WriteError(w, http.StatusNotFound, "Not found")
+		
+	case http.MethodPut:
+		// /apis/{api} - update existing API
+		if len(req.URL.Path) > len("/apis/") && !strings.Contains(req.URL.Path[len("/apis/"):], "/") {
+			r.apiHandler.UpdateAPI(w, req)
+			return
+		}
+		utils.WriteError(w, http.StatusNotFound, "Not found")
+		
+	case http.MethodDelete:
+		// /apis/{api} - delete API
+		if len(req.URL.Path) > len("/apis/") && !strings.Contains(req.URL.Path[len("/apis/"):], "/") {
+			r.apiHandler.DeleteAPI(w, req)
+			return
+		}
+		utils.WriteError(w, http.StatusNotFound, "Not found")
+		
 	default:
 		utils.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}

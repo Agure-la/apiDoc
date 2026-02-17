@@ -85,23 +85,110 @@ All endpoints return JSON and are intended to be consumed by a documentation fro
 ### Health
 
 GET /health
+Returns the health status of the service.
 
+GET /ready
+Returns the readiness status of the service.
 
-Response:
+### APIs
+
+#### List All APIs
+GET /apis
+Returns a list of all available APIs.
+
+**Response:**
 ```json
 {
-  "status": "ok"
+  "data": [
+    {
+      "name": "user-service",
+      "title": "User Service API",
+      "description": "API for managing users",
+      "versions": [],
+      "metadata": {}
+    }
+  ]
 }
-APIs
-GET /apis
-Returns a list of available APIs.
+```
 
+#### Create New API
+POST /apis
+Creates a new API documentation entry.
+
+**Request:**
+```json
+{
+  "name": "user-service",
+  "title": "User Service API",
+  "description": "API for managing users",
+  "version": "v1",
+  "spec": {
+    "openapi": "3.0.0",
+    "info": {
+      "title": "User Service API",
+      "version": "1.0.0"
+    },
+    "paths": {}
+  },
+  "metadata": {
+    "team": "backend",
+    "repository": "github.com/company/user-service"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "id": "user-service",
+    "name": "user-service",
+    "version": "v1",
+    "message": "API created successfully"
+  }
+}
+```
+
+#### Get Specific API
 GET /apis/{api}
 Returns metadata for a specific API.
 
-Versions
+#### Update API
+PUT /apis/{api}
+Updates an existing API documentation entry.
+
+**Request:**
+```json
+{
+  "title": "Updated API Title",
+  "description": "Updated description",
+  "metadata": {
+    "team": "backend",
+    "status": "active"
+  }
+}
+```
+
+#### Delete API
+DELETE /apis/{api}
+Deletes an API documentation entry.
+
+**Response:**
+```json
+{
+  "data": {
+    "message": "API deleted successfully",
+    "name": "user-service"
+  }
+}
+```
+
+### Versions
+
+#### List API Versions
 GET /apis/{api}/versions
 Returns all known versions for an API.
 
+#### Get Specific API Version
 GET /apis/{api}/versions/{version}
 Returns documentation metadata for a specific API version.

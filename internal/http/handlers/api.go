@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 
+	"github.com/agure-la/api-docs/internal/models"
 	"github.com/agure-la/api-docs/internal/spec"
 	"github.com/agure-la/api-docs/internal/utils"
 )
@@ -73,4 +75,75 @@ func (h *APIHandler) GetAPIVersion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.WriteJSONResponse(w, http.StatusOK, apiVersion)
+}
+
+func (h *APIHandler) CreateAPI(w http.ResponseWriter, r *http.Request) {
+	var req models.CreateAPIRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "Invalid JSON format")
+		return
+	}
+
+	// Basic validation
+	if req.Name == "" || req.Title == "" || req.Version == "" {
+		utils.WriteError(w, http.StatusBadRequest, "name, title, and version are required")
+		return
+	}
+
+	doc, err := h.service.CreateAPI(&req)
+	if err != nil {
+		utils.WriteError(w, http.StatusConflict, err.Error())
+		return
+	}
+
+	response := models.CreateAPIResponse{
+		ID:      doc.Name,
+		Name:    doc.Name,
+		Version: req.Version,
+		Message: "API created successfully",
+	}
+
+	utils.WriteJSONResponse(w, http.StatusCreated, response)
+}
+
+func (h *APIHandler) UpdateAPI(w http.ResponseWriter, r *http.Request) {
+	apiName := strings.TrimPrefix(r.URL.Path, "/apis/")
+	if apiName == "" {
+		utils.WriteError(w, http.StatusBadRequest, "API name is required")
+		return
+	}
+
+	var req models.UpdateAPIRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		utils.WriteError(w, http.StatusBadRequest, "Invalid JSON format")
+		return
+	}
+
+	doc, err := h.service.UpdateAPI(apiName, &req)
+	if err != nil {
+		utils.WriteError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	utils.WriteJSONResponse(w, http.StatusOK, doc)
+}
+
+func (h *APIHandler) DeleteAPI(w http.ResponseWriter, r *http.Request) {
+	apiName := strings.TrimPrefix(r.URL.Path, "/apis/")
+	if apiName == "" {
+		utils.WriteError(w, http.StatusBadRequest, "API name is required")
+		return
+	}
+
+	if err := h.service.DeleteAPI(apiName); err != nil {
+		utils.WriteError(w, http.StatusNotFound, err.Error())
+		return
+	}
+
+	response := map[string]string{
+		"message": "API deleted successfully",
+		"name":    apiName,
+	}
+
+	utils.WriteJSONResponse(w, http.StatusOK, response)
 }

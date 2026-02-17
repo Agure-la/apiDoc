@@ -92,6 +92,65 @@ func (s *Service) GetAPIVersions(name string) ([]models.APIVersion, error) {
 	return doc.Versions, nil
 }
 
+func (s *Service) CreateAPI(req *models.CreateAPIRequest) (*models.APIDocument, error) {
+	s.cacheMu.Lock()
+	defer s.cacheMu.Unlock()
+
+	// Check if API already exists
+	if _, exists := s.cache[req.Name]; exists {
+		return nil, fmt.Errorf("API with name '%s' already exists", req.Name)
+	}
+
+	// Create new API document
+	doc := &models.APIDocument{
+		Name:        req.Name,
+		Title:       req.Title,
+		Description: req.Description,
+		Versions:    []models.APIVersion{},
+		Metadata:    req.Metadata,
+	}
+
+	// Add to cache
+	s.cache[req.Name] = doc
+
+	return doc, nil
+}
+
+func (s *Service) UpdateAPI(name string, req *models.UpdateAPIRequest) (*models.APIDocument, error) {
+	s.cacheMu.Lock()
+	defer s.cacheMu.Unlock()
+
+	doc, exists := s.cache[name]
+	if !exists {
+		return nil, fmt.Errorf("API not found: %s", name)
+	}
+
+	// Update fields if provided
+	if req.Title != "" {
+		doc.Title = req.Title
+	}
+	if req.Description != "" {
+		doc.Description = req.Description
+	}
+	if req.Metadata != nil {
+		doc.Metadata = req.Metadata
+	}
+
+	return doc, nil
+}
+
+func (s *Service) DeleteAPI(name string) error {
+	s.cacheMu.Lock()
+	defer s.cacheMu.Unlock()
+
+	if _, exists := s.cache[name]; !exists {
+		return fmt.Errorf("API not found: %s", name)
+	}
+
+	delete(s.cache, name)
+	return nil
+}
+
 func (s *Service) loadSpec(name, path, version string) (*models.APIDocument, error) {
 	openapiDoc, err := s.loader.Load(path)
 	if err != nil {
