@@ -2,7 +2,7 @@ package parser
 
 import (
 	"github.com/getkin/kin-openapi/openapi3"
-    "github.com/agure-la/api-docs/internal/spec"
+    "github.com/agure-la/api-docs/internal/models"
 
 )
 
