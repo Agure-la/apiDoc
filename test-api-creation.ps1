@@ -1,7 +1,7 @@
 # Base URL
 $BaseUrl = "http://localhost:8080"
 
-Write-Host "=== API Documentation Backend Test ===" -ForegroundColor Green
+Write-Host "=== Refactored API Documentation Backend Test ===" -ForegroundColor Green
 Write-Host ""
 
 # Test health endpoint
@@ -124,4 +124,4 @@ try {
 }
 Write-Host ""
 
-Write-Host "=== Test Complete ===" -ForegroundColor Green
+Write-Host "=== Refactoring Test Complete ===" -ForegroundColor Green

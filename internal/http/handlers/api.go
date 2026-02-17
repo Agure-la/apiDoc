@@ -149,10 +149,10 @@ func (h *APIHandler) DeleteAPI(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]string{
+	deleteResponse := map[string]string{
 		"message": "API deleted successfully",
 		"name":    apiName,
 	}
 
-	response.WriteJSONResponse(w, http.StatusOK, response)
+	response.WriteJSONResponse(w, http.StatusOK, deleteResponse)
 }

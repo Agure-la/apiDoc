@@ -13,15 +13,15 @@ func NewHealthHandler() *HealthHandler {
 }
 
 func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
-	response := map[string]string{
+	healthResponse := map[string]string{
 		"status": "ok",
 	}
-	response.WriteJSONResponse(w, http.StatusOK, response)
+	response.WriteJSONResponse(w, http.StatusOK, healthResponse)
 }
 
 func (h *HealthHandler) Ready(w http.ResponseWriter, r *http.Request) {
-	response := map[string]string{
+	readyResponse := map[string]string{
 		"status": "ready",
 	}
-	response.WriteJSONResponse(w, http.StatusOK, response)
+	response.WriteJSONResponse(w, http.StatusOK, readyResponse)
 }
