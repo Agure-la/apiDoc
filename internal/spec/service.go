@@ -2,74 +2,54 @@ package spec
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/agure-la/api-docs/internal/config"
+	"github.com/agure-la/api-docs/internal/errors"
 	"github.com/agure-la/api-docs/internal/models"
 	"github.com/agure-la/api-docs/internal/spec/loader"
 	"github.com/agure-la/api-docs/internal/spec/parser"
 )
 
+// Service handles business logic for API documentation
 type Service struct {
-	config   *config.Config
-	loader   *loader.FileSystemLoader
-	parser   *parser.Parser
-	cache    map[string]*models.APIDocument
-	cacheMu  sync.RWMutex
+	repository *Repository
+	loader     *loader.FileSystemLoader
+	parser     *parser.Parser
+	config     *config.Config
 }
 
 func NewService(cfg *config.Config) *Service {
 	return &Service{
-		config: cfg,
-		loader: loader.NewFileSystemLoader(),
-		parser: parser.New(),
-		cache:  make(map[string]*models.APIDocument),
+		repository: NewRepository(),
+		loader:     loader.NewFileSystemLoader(),
+		parser:     parser.New(),
+		config:     cfg,
 	}
 }
 
 func (s *Service) LoadAll() error {
-	s.cacheMu.Lock()
-	defer s.cacheMu.Unlock()
-
-	s.cache = make(map[string]*models.APIDocument)
-
 	for _, source := range s.config.Specs.Sources {
 		doc, err := s.loadSpec(source.Name, source.Path, source.Version)
 		if err != nil {
 			return fmt.Errorf("failed to load spec %s: %w", source.Name, err)
 		}
-		s.cache[source.Name] = doc
+		if err := s.repository.Save(doc); err != nil {
+			return fmt.Errorf("failed to save spec %s: %w", source.Name, err)
+		}
 	}
-
 	return nil
 }
 
 func (s *Service) GetAPIs() []models.APIDocument {
-	s.cacheMu.RLock()
-	defer s.cacheMu.RUnlock()
-
-	apis := make([]models.APIDocument, 0, len(s.cache))
-	for _, doc := range s.cache {
-		apis = append(apis, *doc)
-	}
-
-	return apis
+	return s.repository.FindAll()
 }
 
 func (s *Service) GetAPI(name string) (*models.APIDocument, error) {
-	s.cacheMu.RLock()
-	defer s.cacheMu.RUnlock()
-
-	doc, exists := s.cache[name]
-	if !exists {
-		return nil, fmt.Errorf("API not found: %s", name)
-	}
-
-	return doc, nil
+	return s.repository.FindByName(name)
 }
 
 func (s *Service) GetAPIVersion(name, version string) (*models.APIVersion, error) {
-	doc, err := s.GetAPI(name)
+	doc, err := s.repository.FindByName(name)
 	if err != nil {
 		return nil, err
 	}
@@ -80,11 +60,11 @@ func (s *Service) GetAPIVersion(name, version string) (*models.APIVersion, error
 		}
 	}
 
-	return nil, fmt.Errorf("version %s not found for API %s", version, name)
+	return nil, errors.NotFound(fmt.Sprintf("version %s for API %s", version, name))
 }
 
 func (s *Service) GetAPIVersions(name string) ([]models.APIVersion, error) {
-	doc, err := s.GetAPI(name)
+	doc, err := s.repository.FindByName(name)
 	if err != nil {
 		return nil, err
 	}
@@ -93,15 +73,10 @@ func (s *Service) GetAPIVersions(name string) ([]models.APIVersion, error) {
 }
 
 func (s *Service) CreateAPI(req *models.CreateAPIRequest) (*models.APIDocument, error) {
-	s.cacheMu.Lock()
-	defer s.cacheMu.Unlock()
-
-	// Check if API already exists
-	if _, exists := s.cache[req.Name]; exists {
-		return nil, fmt.Errorf("API with name '%s' already exists", req.Name)
+	if s.repository.Exists(req.Name) {
+		return nil, errors.Conflict("API", fmt.Sprintf("API with name '%s' already exists", req.Name))
 	}
 
-	// Create new API document
 	doc := &models.APIDocument{
 		Name:        req.Name,
 		Title:       req.Title,
@@ -110,22 +85,19 @@ func (s *Service) CreateAPI(req *models.CreateAPIRequest) (*models.APIDocument, 
 		Metadata:    req.Metadata,
 	}
 
-	// Add to cache
-	s.cache[req.Name] = doc
+	if err := s.repository.Save(doc); err != nil {
+		return nil, errors.InternalError(fmt.Sprintf("failed to save API: %v", err))
+	}
 
 	return doc, nil
 }
 
 func (s *Service) UpdateAPI(name string, req *models.UpdateAPIRequest) (*models.APIDocument, error) {
-	s.cacheMu.Lock()
-	defer s.cacheMu.Unlock()
-
-	doc, exists := s.cache[name]
-	if !exists {
-		return nil, fmt.Errorf("API not found: %s", name)
+	doc, err := s.repository.FindByName(name)
+	if err != nil {
+		return nil, err
 	}
 
-	// Update fields if provided
 	if req.Title != "" {
 		doc.Title = req.Title
 	}
@@ -136,19 +108,15 @@ func (s *Service) UpdateAPI(name string, req *models.UpdateAPIRequest) (*models.
 		doc.Metadata = req.Metadata
 	}
 
+	if err := s.repository.Save(doc); err != nil {
+		return nil, errors.InternalError(fmt.Sprintf("failed to update API: %v", err))
+	}
+
 	return doc, nil
 }
 
 func (s *Service) DeleteAPI(name string) error {
-	s.cacheMu.Lock()
-	defer s.cacheMu.Unlock()
-
-	if _, exists := s.cache[name]; !exists {
-		return fmt.Errorf("API not found: %s", name)
-	}
-
-	delete(s.cache, name)
-	return nil
+	return s.repository.Delete(name)
 }
 
 func (s *Service) loadSpec(name, path, version string) (*models.APIDocument, error) {

@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/agure-la/api-docs/internal/http/handlers"
+	"github.com/agure-la/api-docs/internal/response"
 	"github.com/agure-la/api-docs/internal/spec"
-	"github.com/agure-la/api-docs/internal/utils"
 )
 
 type Router struct {
@@ -65,7 +65,7 @@ func (r *Router) handleAPIs(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		
-		utils.WriteError(w, http.StatusNotFound, "Not found")
+		response.WriteError(w, http.StatusNotFound, "Not found")
 		
 	case http.MethodPost:
 		// /apis - create new API
@@ -73,7 +73,7 @@ func (r *Router) handleAPIs(w http.ResponseWriter, req *http.Request) {
 			r.apiHandler.CreateAPI(w, req)
 			return
 		}
-		utils.WriteError(w, http.StatusNotFound, "Not found")
+		response.WriteError(w, http.StatusNotFound, "Not found")
 		
 	case http.MethodPut:
 		// /apis/{api} - update existing API
@@ -81,7 +81,7 @@ func (r *Router) handleAPIs(w http.ResponseWriter, req *http.Request) {
 			r.apiHandler.UpdateAPI(w, req)
 			return
 		}
-		utils.WriteError(w, http.StatusNotFound, "Not found")
+		response.WriteError(w, http.StatusNotFound, "Not found")
 		
 	case http.MethodDelete:
 		// /apis/{api} - delete API
@@ -89,9 +89,9 @@ func (r *Router) handleAPIs(w http.ResponseWriter, req *http.Request) {
 			r.apiHandler.DeleteAPI(w, req)
 			return
 		}
-		utils.WriteError(w, http.StatusNotFound, "Not found")
+		response.WriteError(w, http.StatusNotFound, "Not found")
 		
 	default:
-		utils.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		response.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 }
