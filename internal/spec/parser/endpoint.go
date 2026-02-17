@@ -2,14 +2,14 @@ package parser
 
 import (
 	"strings"
+	"strconv"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/agure-la/api-docs/internal/spec"
-     "strconv"
+	"github.com/agure-la/api-docs/internal/models"
 )
 
-func parseEndpoints(doc *openapi3.T) []spec.Endpoint {
-	var endpoints []spec.Endpoint
+func parseEndpoints(doc *openapi3.T) []models.Endpoint {
+	var endpoints []models.Endpoint
 
 	if doc.Paths == nil {
 		return endpoints
@@ -25,9 +25,9 @@ func parseEndpoints(doc *openapi3.T) []spec.Endpoint {
 				continue
 			}
 
-			endpoints = append(endpoints, spec.Endpoint{
+			endpoints = append(endpoints, models.Endpoint{
 				ID:          op.OperationID,
-				Method:      spec.HTTPMethod(strings.ToUpper(method)),
+				Method:      models.HTTPMethod(strings.ToUpper(method)),
 				Path:        path,
 				Summary:     op.Summary,
 				Description: op.Description,
@@ -43,14 +43,14 @@ func parseEndpoints(doc *openapi3.T) []spec.Endpoint {
 	return endpoints
 }
 
-func parseParameters(op *openapi3.Operation) []spec.Parameter {
-	var params []spec.Parameter
+func parseParameters(op *openapi3.Operation) []models.Parameter {
+	var params []models.Parameter
 
 	for _, p := range op.Parameters {
 		param := p.Value
-		params = append(params, spec.Parameter{
+		params = append(params, models.Parameter{
 			Name:        param.Name,
-			In:          spec.ParamIn(param.In),
+			In:          models.ParamIn(param.In),
 			Required:    param.Required,
 			Description: param.Description,
 			SchemaRef:   "", // Can be filled in with param.Schema.Ref if needed
@@ -60,21 +60,21 @@ func parseParameters(op *openapi3.Operation) []spec.Parameter {
 	return params
 }
 
-func parseRequestBody(op *openapi3.Operation) *spec.RequestBody {
+func parseRequestBody(op *openapi3.Operation) *models.RequestBody {
 	if op.RequestBody == nil || op.RequestBody.Value == nil {
 		return nil
 	}
 
 	rb := op.RequestBody.Value
-	return &spec.RequestBody{
+	return &models.RequestBody{
 		Description: rb.Description,
 		Required:    rb.Required,
 		SchemaRef:   "", // For now, we can extract the schema ref from rb.Content["application/json"].Schema.Ref
 	}
 }
 
-func parseResponses(op *openapi3.Operation) []spec.Response {
-	var responses []spec.Response
+func parseResponses(op *openapi3.Operation) []models.Response {
+	var responses []models.Response
 
 	if op.Responses == nil {
 		return responses
@@ -90,7 +90,7 @@ func parseResponses(op *openapi3.Operation) []spec.Response {
 			description = *respRef.Value.Description
 		}
 
-		responses = append(responses, spec.Response{
+		responses = append(responses, models.Response{
 			StatusCode:  parseStatusCode(code),
 			Description: description,
 			SchemaRef:   "",

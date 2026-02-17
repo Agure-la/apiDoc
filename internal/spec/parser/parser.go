@@ -13,15 +13,15 @@ func New() *Parser {
 	return &Parser{}
 }
 
-func (p *Parser) Parse(apiName string,version string,doc *openapi3.T,) (*spec.APIVersion, error) {
+func (p *Parser) Parse(apiName string,version string,doc *openapi3.T,) (*models.APIVersion, error) {
 
 	endpoints := parseEndpoints(doc)
 	schemas := parseSchemas(doc)
 	auth := parseAuth(doc)
 
-	return &spec.APIVersion{
+	return &models.APIVersion{
 		Version:   version,
-		Info: spec.VersionInfo{
+		Info: models.VersionInfo{
 			Title:       doc.Info.Title,
 			Description: doc.Info.Description,
 		},

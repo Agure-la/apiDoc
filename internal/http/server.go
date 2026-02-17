@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/agure-la/api-docs/internal/config"
 	"github.com/agure-la/api-docs/internal/spec"

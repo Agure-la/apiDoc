@@ -4,18 +4,20 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/agure-la/api-docs/internal/http/handlers"
 	"github.com/agure-la/api-docs/internal/spec"
+	"github.com/agure-la/api-docs/internal/utils"
 )
 
 type Router struct {
-	apiHandler    *APIHandler
-	healthHandler *HealthHandler
+	apiHandler    *handlers.APIHandler
+	healthHandler *handlers.HealthHandler
 }
 
 func NewRouter(service *spec.Service) *Router {
 	return &Router{
-		apiHandler:    NewAPIHandler(service),
-		healthHandler: NewHealthHandler(),
+		apiHandler:    handlers.NewAPIHandler(service),
+		healthHandler: handlers.NewHealthHandler(),
 	}
 }
 
@@ -63,8 +65,8 @@ func (r *Router) handleAPIs(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		
-		WriteError(w, http.StatusNotFound, "Not found")
+		utils.WriteError(w, http.StatusNotFound, "Not found")
 	default:
-		WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		utils.WriteError(w, http.StatusMethodNotAllowed, "Method not allowed")
 	}
 }

@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/agure-la/api-docs/internal/http"
+	"github.com/agure-la/api-docs/internal/utils"
 )
 
 type HealthHandler struct{}
@@ -16,12 +16,12 @@ func (h *HealthHandler) Health(w http.ResponseWriter, r *http.Request) {
 	response := map[string]string{
 		"status": "ok",
 	}
-	http.WriteJSONResponse(w, http.StatusOK, response)
+	utils.WriteJSONResponse(w, http.StatusOK, response)
 }
 
 func (h *HealthHandler) Ready(w http.ResponseWriter, r *http.Request) {
 	response := map[string]string{
 		"status": "ready",
 	}
-	http.WriteJSONResponse(w, http.StatusOK, response)
+	utils.WriteJSONResponse(w, http.StatusOK, response)
 }

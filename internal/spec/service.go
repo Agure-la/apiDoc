@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/agure-la/api-docs/internal/config"
+	"github.com/agure-la/api-docs/internal/models"
 	"github.com/agure-la/api-docs/internal/spec/loader"
 	"github.com/agure-la/api-docs/internal/spec/parser"
 )
@@ -13,7 +14,7 @@ type Service struct {
 	config   *config.Config
 	loader   *loader.FileSystemLoader
 	parser   *parser.Parser
-	cache    map[string]*APIDocument
+	cache    map[string]*models.APIDocument
 	cacheMu  sync.RWMutex
 }
 
@@ -22,7 +23,7 @@ func NewService(cfg *config.Config) *Service {
 		config: cfg,
 		loader: loader.NewFileSystemLoader(),
 		parser: parser.New(),
-		cache:  make(map[string]*APIDocument),
+		cache:  make(map[string]*models.APIDocument),
 	}
 }
 
@@ -30,7 +31,7 @@ func (s *Service) LoadAll() error {
 	s.cacheMu.Lock()
 	defer s.cacheMu.Unlock()
 
-	s.cache = make(map[string]*APIDocument)
+	s.cache = make(map[string]*models.APIDocument)
 
 	for _, source := range s.config.Specs.Sources {
 		doc, err := s.loadSpec(source.Name, source.Path, source.Version)
@@ -43,11 +44,11 @@ func (s *Service) LoadAll() error {
 	return nil
 }
 
-func (s *Service) GetAPIs() []APIDocument {
+func (s *Service) GetAPIs() []models.APIDocument {
 	s.cacheMu.RLock()
 	defer s.cacheMu.RUnlock()
 
-	apis := make([]APIDocument, 0, len(s.cache))
+	apis := make([]models.APIDocument, 0, len(s.cache))
 	for _, doc := range s.cache {
 		apis = append(apis, *doc)
 	}
@@ -55,7 +56,7 @@ func (s *Service) GetAPIs() []APIDocument {
 	return apis
 }
 
-func (s *Service) GetAPI(name string) (*APIDocument, error) {
+func (s *Service) GetAPI(name string) (*models.APIDocument, error) {
 	s.cacheMu.RLock()
 	defer s.cacheMu.RUnlock()
 
@@ -67,7 +68,7 @@ func (s *Service) GetAPI(name string) (*APIDocument, error) {
 	return doc, nil
 }
 
-func (s *Service) GetAPIVersion(name, version string) (*APIVersion, error) {
+func (s *Service) GetAPIVersion(name, version string) (*models.APIVersion, error) {
 	doc, err := s.GetAPI(name)
 	if err != nil {
 		return nil, err
@@ -82,7 +83,7 @@ func (s *Service) GetAPIVersion(name, version string) (*APIVersion, error) {
 	return nil, fmt.Errorf("version %s not found for API %s", version, name)
 }
 
-func (s *Service) GetAPIVersions(name string) ([]APIVersion, error) {
+func (s *Service) GetAPIVersions(name string) ([]models.APIVersion, error) {
 	doc, err := s.GetAPI(name)
 	if err != nil {
 		return nil, err
@@ -91,7 +92,7 @@ func (s *Service) GetAPIVersions(name string) ([]APIVersion, error) {
 	return doc.Versions, nil
 }
 
-func (s *Service) loadSpec(name, path, version string) (*APIDocument, error) {
+func (s *Service) loadSpec(name, path, version string) (*models.APIDocument, error) {
 	openapiDoc, err := s.loader.Load(path)
 	if err != nil {
 		return nil, err
@@ -102,11 +103,11 @@ func (s *Service) loadSpec(name, path, version string) (*APIDocument, error) {
 		return nil, err
 	}
 
-	return &APIDocument{
+	return &models.APIDocument{
 		Name:        name,
 		Title:       apiVersion.Info.Title,
 		Description: apiVersion.Info.Description,
-		Versions:    []APIVersion{*apiVersion},
+		Versions:    []models.APIVersion{*apiVersion},
 		Metadata:    make(map[string]string),
 	}, nil
 }
